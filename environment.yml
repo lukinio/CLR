@@ -3,7 +3,7 @@ channels:
   - pytorch
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.9
   - pip
   - jupyter
   - jupyterlab
@@ -16,7 +16,7 @@ dependencies:
   - pyyaml
   - pytorch
   - pytorch-gpu
-  - torchvision
+  - torchvision=0.9.1
   - cudatoolkit=11.4
   - tensorboard
   - pip:
