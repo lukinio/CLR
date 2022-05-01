@@ -1,0 +1,23 @@
+name: CLR
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - jupyter
+  - jupyterlab
+  - jupyterlab-lsp
+  - python-language-server
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pyyaml
+  - pytorch
+  - pytorch-gpu
+  - torchvision
+  - cudatoolkit=11.4
+  - tensorboard
+  - pip:
+      - -r requirements.txt
