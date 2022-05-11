@@ -8,6 +8,7 @@ from pl_bolts.optimizers.lars import LARS
 from pl_bolts.optimizers.lr_scheduler import linear_warmup_decay
 
 from .cw import cw_normality
+from .memory_operator import MemoryOperator
 
 
 class Projection(nn.Module):
@@ -38,6 +39,7 @@ class CLR(LightningModule):
         batch_size: int,
         dataset: str,
         reg_coeff: float,
+        memory_length: int = 0,
         num_nodes: int = 1,
         arch: str = "resnet50",
         hidden_mlp: int = 2048,
@@ -90,6 +92,8 @@ class CLR(LightningModule):
         self.max_epochs = max_epochs
 
         self.mse_loss = nn.MSELoss()
+        self.memory_length = memory_length
+        self.memory = MemoryOperator(self.memory_length)
         self.encoder = self.init_model()
 
         self.projection = Projection(input_dim=self.hidden_mlp, hidden_dim=self.hidden_mlp, output_dim=self.feat_dim)
@@ -110,7 +114,7 @@ class CLR(LightningModule):
         # bolts resnet returns a list
         return self.encoder(x)[-1]
 
-    def shared_step(self, batch, mode="train"):
+    def shared_step(self, batch, train: bool):
         if self.dataset == "stl10":
             unlabeled_batch = batch[0]
             batch = unlabeled_batch
@@ -126,19 +130,29 @@ class CLR(LightningModule):
         z1 = self.projection(h1)
         z2 = self.projection(h2)
 
-        loss = self.mse_cw_loss(z1, z2, mode=mode)
+        if train:
+            eval_latent = self.memory(z1)
+            log_prefix = "train"
+        else:
+            eval_latent = z1
+            log_prefix = "val"
 
+        mse = self.mse_loss(z1, z2)
+        cw = cw_normality(eval_latent)
+        cw_reg = cw * self.reg_coeff
+        loss = mse + cw_reg
+        self.log(f"{log_prefix}_loss/mse", mse, on_step=False, on_epoch=True)
+        self.log(f"{log_prefix}_loss/cw", cw, on_step=False, on_epoch=True)
+        self.log(f"{log_prefix}_loss/cw_reg", cw_reg, on_step=False, on_epoch=True)
         return loss
 
     def training_step(self, batch, batch_idx):
-        loss = self.shared_step(batch, mode="train")
-
-        self.log("train_loss", loss, on_step=True, on_epoch=False)
+        loss = self.shared_step(batch, train=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self.shared_step(batch, mode="valid")
-
+        loss = self.shared_step(batch, train=False)
         self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         return loss
 
@@ -192,23 +206,3 @@ class CLR(LightningModule):
         }
 
         return [optimizer], [scheduler]
-
-    def mse_cw_loss(self, out_1, out_2, mode):
-        """
-        assume out_1 and out_2 are normalized
-        out_1: [batch_size, dim]
-        out_2: [batch_size, dim]
-        """
-        mse = self.mse_loss(out_1, out_2)
-        cw = cw_normality(out_1)
-        cw_reg = cw * self.reg_coeff
-        if mode == "train":
-            self.log("train_loss/mse", mse, on_step=True, on_epoch=False)
-            self.log("train_loss/cw", cw, on_step=True, on_epoch=False)
-            self.log("train_loss/cw_reg", cw_reg, on_step=True, on_epoch=False)
-        else:
-            self.log("val_loss/mse", mse, on_step=True, on_epoch=False)
-            self.log("val_loss/cw", cw, on_step=True, on_epoch=False)
-            self.log("val_loss/cw_reg", cw_reg, on_step=True, on_epoch=False)
-        loss = mse + cw_reg
-        return loss

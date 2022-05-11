@@ -2,13 +2,14 @@
 
 dataset=cifar10
 data_dir="/shared/sets/datasets/vision/cifar10"
-batch_size=256
+batch_size=64
+memory_length=128
 optimizer=lars
 max_epochs=800
 learning_rate=( 1.5 )
-coeffs=( 1 10 100 )
+coeffs=( 80 100 )
 
-prefix=one_small
+prefix=memory_one_small
 
 
 OUTDIR=outputs/${dataset}/console/${prefix}
@@ -21,7 +22,7 @@ do
           exp_name=${prefix}_coeff_${reg_coeff}
           python -u clr_pretrain.py --gpus 1 --dataset ${dataset} --data_dir ${data_dir} --batch_size ${batch_size} --optimizer ${optimizer} \
                                     --learning_rate ${lr} --exclude_bn_bias --max_epochs ${max_epochs} --exp_name ${exp_name} \
-                                    --reg_coeff ${reg_coeff} --mode one --online_ft | tee ${OUTDIR}/${lr}_${reg_coeff}.log
+                                    --reg_coeff ${reg_coeff} --memory_length ${memory_length} --mode one --online_ft | tee ${OUTDIR}/${lr}_${reg_coeff}.log
     done
 done
 

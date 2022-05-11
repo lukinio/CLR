@@ -49,6 +49,7 @@ def get_args(args):
     parser.add_argument("--batch_size", default=128, type=int, help="batch size per gpu")
 
     parser.add_argument("--reg_coeff", default=1, type=float, help="coeff")
+    parser.add_argument("--memory_length", default=128, type=int, help="coeff")
     parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay")
     parser.add_argument("--learning_rate", default=1e-3, type=float, help="base learning rate")
     parser.add_argument("--start_lr", default=0, type=float, help="initial warmup learning rate")
