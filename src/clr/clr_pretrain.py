@@ -52,6 +52,7 @@ def get_args(args):
     parser.add_argument("--memory_length", default=128, type=int, help="coeff")
     parser.add_argument("--weight_decay", default=1e-6, type=float, help="weight decay")
     parser.add_argument("--learning_rate", default=1e-3, type=float, help="base learning rate")
+    parser.add_argument("--grad_clip", default=0, type=float, help="gradient clipping")
     parser.add_argument("--start_lr", default=0, type=float, help="initial warmup learning rate")
     parser.add_argument("--final_lr", type=float, default=1e-6, help="final learning rate")
     parser.add_argument("--exp_name", type=str, default="test", help="exp name")
@@ -64,6 +65,11 @@ def cli_main():
 
     # model args
     args = get_args(sys.argv[1:])
+    coeff_scalar = (args.batch_size + args.memory_length) / args.batch_size
+    print(f"old coeff: {args.reg_coeff}")
+    args.reg_coeff = args.reg_coeff * coeff_scalar
+    print(f"scalar: {coeff_scalar}")
+    print(f"new coeff: {args.reg_coeff}")
 
     if args.dataset == "stl10":
         dm = STL10DataModule(data_dir=args.data_dir, batch_size=args.batch_size, num_workers=args.num_workers)
@@ -94,6 +100,9 @@ def cli_main():
         args.maxpool1 = False
         args.first_conv = False
         args.input_height = dm.size()[-1]
+        # args.learning_rate = 4.8
+        # args.final_lr = 0.0048
+        # args.start_lr = 0.3
 
         normalization = cifar10_normalization()
 
@@ -107,10 +116,10 @@ def cli_main():
         args.gaussian_blur = True
         args.jitter_strength = 1.0
 
-        args.batch_size = 64
-        args.num_nodes = 8
-        args.gpus = 8  # per-node
-        args.max_epochs = 800
+        # args.batch_size = 64
+        # args.num_nodes = 1
+        # args.gpus = 8  # per-node
+        # args.max_epochs = 800
 
         args.optimizer = "lars"
         args.learning_rate = 4.8
@@ -175,6 +184,7 @@ def cli_main():
         precision=32 if args.fp32 else 16,
         callbacks=callbacks,
         logger=logger,
+        gradient_clip_val=args.grad_clip
         # fast_dev_run=args.fast_dev_run,
     )
 

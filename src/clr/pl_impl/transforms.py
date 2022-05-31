@@ -80,7 +80,7 @@ class CLRTrainDataTransform:
     def __call__(self, sample):
         transform = self.train_transform
 
-        xi = transform(sample) if self.augment_both else self.final_transform(sample)
+        xi = transform(sample) if self.augment_both else self.online_transform(sample)
         xj = transform(sample)
 
         return xi, xj, self.online_transform(sample)

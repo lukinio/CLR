@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from pl_bolts.models.self_supervised.ssl_finetuner import SSLFineTuner
+# from pl_bolts.models.self_supervised.ssl_finetuner import SSLFineTuner
 from pl_bolts.transforms.dataset_normalizations import (
     cifar10_normalization,
     imagenet_normalization,
@@ -12,6 +12,7 @@ from pl_bolts.transforms.dataset_normalizations import (
 )
 from pl_impl.clr_module import CLR
 from pl_impl.transforms import CLRFinetuneTransform
+from pl_impl.ssl_finefuner import SSLFineTuner
 
 
 def cli_main():  # pragma: no cover
@@ -32,7 +33,9 @@ def cli_main():  # pragma: no cover
     parser.add_argument("--num_epochs", default=100, type=int, help="number of epochs")
 
     # fine-tuner params
+    parser.add_argument("--optimizer", default="adam", type=str, help="choose between adam/sgd")
     parser.add_argument("--reg_coeff", default=1, type=float, help="coeff")
+    parser.add_argument("--memory_length", default=0, type=int, help="coeff")
     parser.add_argument("--in_features", type=int, default=2048)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--learning_rate", type=float, default=0.3)
@@ -40,7 +43,7 @@ def cli_main():  # pragma: no cover
     parser.add_argument("--nesterov", type=bool, default=False)  # fix nesterov flag here
     parser.add_argument("--scheduler_type", type=str, default="cosine")
     parser.add_argument("--gamma", type=float, default=0.1)
-    parser.add_argument("--final_lr", type=float, default=0.0)
+    parser.add_argument("--final_lr", type=float, default=1e-5)
     parser.add_argument("--exp_name", type=str, default="test", help="exp name")
 
     args = parser.parse_args()
@@ -132,6 +135,7 @@ def cli_main():  # pragma: no cover
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
         nesterov=args.nesterov,
+        optimizer=args.optimizer,
         scheduler_type=args.scheduler_type,
         gamma=args.gamma,
         final_lr=args.final_lr,

@@ -6,6 +6,7 @@ from pytorch_lightning import LightningModule
 from pl_bolts.models.self_supervised.resnets import resnet18, resnet50
 from pl_bolts.optimizers.lars import LARS
 from pl_bolts.optimizers.lr_scheduler import linear_warmup_decay
+from typing import Union
 
 from .cw import cw_normality
 from .memory_operator import MemoryOperator
@@ -114,6 +115,22 @@ class CLR(LightningModule):
         # bolts resnet returns a list
         return self.encoder(x)[-1]
 
+    def pcgrad(self, g1: torch.Tensor, g2: torch.Tensor) -> tuple[Union[torch.Tensor, float], Union[torch.Tensor, float], torch.Tensor, torch.Tensor, torch.Tensor]:
+
+        lambda1: Union[torch.Tensor, float] = 1.0
+        lambda2: Union[torch.Tensor, float] = 1.0
+
+        dot_product = torch.dot(g1, g2)
+
+        g1_norm: torch.Tensor = torch.norm(g1, 2)
+        g2_norm: torch.Tensor = torch.norm(g2, 2)
+
+        if dot_product < 0:
+            lambda1 = 1.0 - dot_product / g1_norm ** 2
+            lambda2 = 1.0 - dot_product / g2_norm ** 2
+
+        return lambda1, lambda2, dot_product, g1_norm, g2_norm
+
     def shared_step(self, batch, train: bool):
         if self.dataset == "stl10":
             unlabeled_batch = batch[0]
@@ -136,6 +153,11 @@ class CLR(LightningModule):
         else:
             eval_latent = z1
             log_prefix = "val"
+
+        # g1 = torch.cat([i.flatten() for i in torch.autograd.grad(z1, list(self.parameters()), retain_graph=True,
+        #                                                          create_graph=True)]).flatten()
+        # g2 = torch.cat([i.flatten() for i in torch.autograd.grad(z2, list(self.parameters()), retain_graph=True,
+        #                                                          create_graph=True)]).flatten()
 
         mse = self.mse_loss(z1, z2)
         cw = cw_normality(eval_latent)

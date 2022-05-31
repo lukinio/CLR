@@ -1,6 +1,7 @@
 import os
 import sys
 from argparse import ArgumentParser
+import torch
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
@@ -28,6 +29,7 @@ def get_args(args):
     parser.add_argument("--feat_dim", default=128, type=int, help="feature dimension")
     parser.add_argument("--online_ft", action="store_true")
     parser.add_argument("--fp32", action="store_true")
+    parser.add_argument("--devices", type=int, default=0)
 
     # transform params
     parser.add_argument("--gaussian_blur", action="store_true", help="add gaussian blur")
@@ -62,7 +64,6 @@ def cli_main():
 
     # model args
     args = get_args(sys.argv[1:])
-
     if args.dataset == "stl10":
         dm = STL10DataModule(data_dir=args.data_dir, batch_size=args.batch_size, num_workers=args.num_workers)
 
@@ -106,10 +107,12 @@ def cli_main():
         args.gaussian_blur = True
         args.jitter_strength = 1.0
 
-        args.batch_size = 64
-        args.num_nodes = 8
-        args.gpus = 8  # per-node
-        args.max_epochs = 800
+        # args.batch_size = 64
+        args.num_nodes = 1
+        # args.gpus = 8  # per-node
+        # args.max_epochs = 800
+
+        META_FILE="/shared/sets/datasets/vision/ImageNet"
 
         args.optimizer = "lars"
         args.learning_rate = 4.8
@@ -117,10 +120,11 @@ def cli_main():
         args.start_lr = 0.3
         args.online_ft = True
 
-        dm = ImagenetDataModule(data_dir=args.data_dir, batch_size=args.batch_size, num_workers=args.num_workers)
+        dm = ImagenetDataModule(data_dir=args.data_dir, meta_dir=META_FILE, batch_size=args.batch_size, num_workers=args.num_workers)
 
         args.num_samples = dm.num_samples
         args.input_height = dm.size()[-1]
+        print(f"in size: {args.input_height}")
     else:
         raise NotImplementedError("other datasets have not been implemented till now")
 
@@ -163,6 +167,7 @@ def cli_main():
     callbacks = [model_checkpoint, online_evaluator] if args.online_ft else [model_checkpoint]
     callbacks.append(lr_monitor)
 
+    print(f"batch: {args.batch_size}")
     trainer = Trainer(
         max_epochs=args.max_epochs,
         gpus=args.gpus,
@@ -172,6 +177,7 @@ def cli_main():
         precision=32 if args.fp32 else 16,
         callbacks=callbacks,
         logger=logger,
+        devices=args.devices
         # fast_dev_run=args.fast_dev_run,
     )
 
