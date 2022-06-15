@@ -133,7 +133,7 @@ class CLR(LightningModule):
     def training_step(self, batch, batch_idx):
         loss = self.shared_step(batch, mode="train")
 
-        self.log("train_loss", loss, on_step=True, on_epoch=False)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -203,12 +203,12 @@ class CLR(LightningModule):
         cw = cw_normality(out_1)
         cw_reg = cw * self.reg_coeff
         if mode == "train":
-            self.log("train_loss/mse", mse, on_step=True, on_epoch=False)
-            self.log("train_loss/cw", cw, on_step=True, on_epoch=False)
-            self.log("train_loss/cw_reg", cw_reg, on_step=True, on_epoch=False)
+            self.log("train_loss/mse", mse, on_step=False, on_epoch=True)
+            self.log("train_loss/cw", cw, on_step=False, on_epoch=True)
+            self.log("train_loss/cw_reg", cw_reg, on_step=False, on_epoch=True)
         else:
-            self.log("val_loss/mse", mse, on_step=True, on_epoch=False)
-            self.log("val_loss/cw", cw, on_step=True, on_epoch=False)
-            self.log("val_loss/cw_reg", cw_reg, on_step=True, on_epoch=False)
+            self.log("val_loss/mse", mse, on_step=False, on_epoch=True)
+            self.log("val_loss/cw", cw, on_step=False, on_epoch=True)
+            self.log("val_loss/cw_reg", cw_reg, on_step=False, on_epoch=True)
         loss = mse + cw_reg
         return loss

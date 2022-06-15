@@ -45,7 +45,7 @@ def get_args(args):
     parser.add_argument("--exclude_bn_bias", action="store_true", help="exclude bn/bias from weight decay")
     parser.add_argument("--max_epochs", default=100, type=int, help="number of total epochs to run")
     parser.add_argument("--max_steps", default=-1, type=int, help="max steps")
-    parser.add_argument("--warmup_epochs", default=10, type=int, help="number of warmup epochs")
+    parser.add_argument("--warmup_epochs", default=0, type=int, help="number of warmup epochs")
     parser.add_argument("--batch_size", default=128, type=int, help="batch size per gpu")
 
     parser.add_argument("--reg_coeff", default=1, type=float, help="coeff")
