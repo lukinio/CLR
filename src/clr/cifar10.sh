@@ -8,7 +8,7 @@ max_epochs=800
 learning_rate=( 1.5 )
 coeffs=( 1 10 100 )
 
-prefix=one_small
+prefix=one_small_test
 
 
 OUTDIR=outputs/${dataset}/console/${prefix}

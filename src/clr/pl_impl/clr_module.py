@@ -116,17 +116,19 @@ class CLR(LightningModule):
             batch = unlabeled_batch
 
         # final image in tuple is for online eval
-        (img1, img2, _), y = batch
+        (img1, img2, img), y = batch
 
         # get h representations, bolts resnet returns a list
         h1 = self(img1)
         h2 = self(img2)
+        # h = self(img)
 
         # get z representations
         z1 = self.projection(h1)
         z2 = self.projection(h2)
+        # z = self.projection(h)
 
-        loss = self.mse_cw_loss(z1, z2, mode=mode)
+        loss = self.mse_cw_loss(z1, z1, z2, mode=mode)
 
         return loss
 
@@ -193,14 +195,15 @@ class CLR(LightningModule):
 
         return [optimizer], [scheduler]
 
-    def mse_cw_loss(self, out_1, out_2, mode):
+    def mse_cw_loss(self, out, out_1, out_2, mode):
         """
         assume out_1 and out_2 are normalized
         out_1: [batch_size, dim]
         out_2: [batch_size, dim]
         """
         mse = self.mse_loss(out_1, out_2)
-        cw = cw_normality(out_1)
+        out = torch.cat((out_1, out_2), dim=0)
+        cw = cw_normality(out)
         cw_reg = cw * self.reg_coeff
         if mode == "train":
             self.log("train_loss/mse", mse, on_step=False, on_epoch=True)
