@@ -121,14 +121,14 @@ class CLR(LightningModule):
         # get h representations, bolts resnet returns a list
         h1 = self(img1)
         h2 = self(img2)
-        # h = self(img)
+        h = self(img)
 
         # get z representations
         z1 = self.projection(h1)
         z2 = self.projection(h2)
-        # z = self.projection(h)
+        z = self.projection(h)
 
-        loss = self.mse_cw_loss(z1, z1, z2, mode=mode)
+        loss = self.mse_cw_loss(z, z1, z2, mode=mode)
 
         return loss
 
@@ -201,16 +201,25 @@ class CLR(LightningModule):
         out_1: [batch_size, dim]
         out_2: [batch_size, dim]
         """
-        mse = self.mse_loss(out_1, out_2)
-        out = torch.cat((out_1, out_2), dim=0)
-        cw = cw_normality(out)
+        mse_aug = self.mse_loss(out_1, out_2)
+        mse_aug_1 = self.mse_loss(out, out_1)
+        mse_aug_2 = self.mse_loss(out, out_2)
+
+        mse = mse_aug + mse_aug_1 + mse_aug_2
+        cw = cw_normality(torch.cat((out, out_1, out_2), dim=0))
         cw_reg = cw * self.reg_coeff
         if mode == "train":
             self.log("train_loss/mse", mse, on_step=False, on_epoch=True)
+            self.log("train_loss/mse_aug", mse_aug, on_step=False, on_epoch=True)
+            self.log("train_loss/mse_aug_1", mse_aug_1, on_step=False, on_epoch=True)
+            self.log("train_loss/mse_aug_2", mse_aug_2, on_step=False, on_epoch=True)
             self.log("train_loss/cw", cw, on_step=False, on_epoch=True)
             self.log("train_loss/cw_reg", cw_reg, on_step=False, on_epoch=True)
         else:
-            self.log("val_loss/mse", mse, on_step=False, on_epoch=True)
+            self.log("train_loss/mse", mse, on_step=False, on_epoch=True)
+            self.log("train_loss/mse_aug", mse_aug, on_step=False, on_epoch=True)
+            self.log("train_loss/mse_aug_1", mse_aug_1, on_step=False, on_epoch=True)
+            self.log("train_loss/mse_aug_2", mse_aug_2, on_step=False, on_epoch=True)
             self.log("val_loss/cw", cw, on_step=False, on_epoch=True)
             self.log("val_loss/cw_reg", cw_reg, on_step=False, on_epoch=True)
         loss = mse + cw_reg
