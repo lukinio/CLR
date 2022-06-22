@@ -35,6 +35,7 @@ def get_args(args):
     parser.add_argument("--jitter_strength", type=float, default=1.0, help="jitter strength")
     parser.add_argument("--dataset", type=str, default="cifar10", help="stl10, cifar10")
     parser.add_argument("--data_dir", type=str, default=".", help="path to download data")
+    parser.add_argument("--model_weights", type=str, default="", help="path to download data")
 
     # training params
     parser.add_argument("--fast_dev_run", default=1, type=int)
@@ -141,6 +142,8 @@ def cli_main():
     )
 
     model = CLR(**args.__dict__)
+    if args.model_weights:
+        model = CLR(**args.__dict__).load_from_checkpoint(args.model_weights, strict=False, reg_coeff=args.reg_coeff)
 
     online_evaluator = None
     if args.online_ft:

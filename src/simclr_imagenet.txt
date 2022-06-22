@@ -1,0 +1,2 @@
+Model ResNet-50 pretrained on ImageNet vi SimCLR method:
+https://pl-bolts-weights.s3.us-east-2.amazonaws.com/simclr/bolts_simclr_imagenet/simclr_imagenet.ckpt
