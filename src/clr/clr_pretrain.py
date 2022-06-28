@@ -107,16 +107,16 @@ def cli_main():
         args.gaussian_blur = True
         args.jitter_strength = 1.0
 
-        args.batch_size = 64
-        args.num_nodes = 8
-        args.gpus = 8  # per-node
-        args.max_epochs = 800
+        # args.batch_size = 64
+        # args.num_nodes = 8
+        # args.gpus = 8  # per-node
+        # args.max_epochs = 800
 
-        args.optimizer = "lars"
-        args.learning_rate = 4.8
+        # args.optimizer = "lars"
+        # args.learning_rate = 4.8
         args.final_lr = 0.0048
         args.start_lr = 0.3
-        args.online_ft = True
+        # args.online_ft = True
 
         dm = ImagenetDataModule(data_dir=args.data_dir, batch_size=args.batch_size, num_workers=args.num_workers)
 
@@ -172,11 +172,13 @@ def cli_main():
         max_epochs=args.max_epochs,
         gpus=args.gpus,
         num_nodes=args.num_nodes,
+        # distributed_backend="ddp",
         accelerator="gpu" if args.gpus > 1 else None,
         sync_batchnorm=True if args.gpus > 1 else False,
         precision=32 if args.fp32 else 16,
         callbacks=callbacks,
         logger=logger,
+        # plugins=DDPPlugin(find_unused_parameters=True),
         # fast_dev_run=args.fast_dev_run,
     )
 

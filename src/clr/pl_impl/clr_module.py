@@ -170,7 +170,7 @@ class CLR(LightningModule):
         else:
             params = self.parameters()
 
-        if self.optim == "lars":
+        if self.optim in ("lars", "sgd"):
             optimizer = LARS(
                 params,
                 lr=self.learning_rate,
@@ -180,6 +180,8 @@ class CLR(LightningModule):
             )
         elif self.optim == "adam":
             optimizer = torch.optim.Adam(params, lr=self.learning_rate, weight_decay=self.weight_decay)
+        else:
+            raise ValueError(f"Incorrect optimizer: {self.optim}")
 
         warmup_steps = self.train_iters_per_epoch * self.warmup_epochs
         total_steps = self.train_iters_per_epoch * self.max_epochs

@@ -1,13 +1,13 @@
 #/bin/bash
 
-dataset=cifar10
-data_dir="/shared/sets/datasets/vision/cifar10"
-batch_size=512
+dataset=imagenet
+data_dir="/shared/sets/datasets/vision/ImageNet"
+batch_size=200
 optimizer=lars
 max_epochs=800
-learning_rate=( 1.5 )
+learning_rate=( 4.8 )
 coeffs=( 1 )
-model_weights="" # leave empty if want to train from scratch
+model_weights="../simclr_imagenet.ckpt"
 
 prefix=one_small_pass
 
@@ -20,10 +20,10 @@ do
     for lr in "${learning_rate[@]}"
     do
           exp_name=${prefix}_coeff_${reg_coeff}
-          python -u clr_pretrain.py --gpus 0 1 --dataset ${dataset} --data_dir ${data_dir} --batch_size ${batch_size} --optimizer ${optimizer} \
+          python -u clr_pretrain.py --gpus 1 --dataset ${dataset} --data_dir ${data_dir} --batch_size ${batch_size} --optimizer ${optimizer} \
                                     --learning_rate ${lr} --exclude_bn_bias --max_epochs ${max_epochs} --exp_name ${exp_name} \
                                     --reg_coeff ${reg_coeff} --mode both --online_ft \
-                                    | tee ${OUTDIR}/${lr}_${reg_coeff}.log
+                                    --model_weights ${model_weights} | tee ${OUTDIR}/${lr}_${reg_coeff}.log
     done
 done
 
